@@ -1,21 +1,29 @@
-import { Client } from "pg";
+import { Pool } from "pg";
+import "dotenv/config"; // Automatically loads environment variables from .env
 
-const client = new Client({
-    host : "localhost",
-    user : "postgres",
-    password : "postgres",
-    port : 5432,
-    database : "postgres",
-})
+const pool = new Pool({
+    user: process.env.DB_USER,
+    host: process.env.DB_HOST,
+    database: process.env.DB_NAME,
+    password: process.env.DB_PASSWORD,
+    port: process.env.DB_PORT,
+});
 
-client.connect();
-
-client.query(`Select * from users`, (err , res)=>{
-    if(!err){
-        console.log(res.rows)
+async function testConnection() {
+    try {
+        // Attempt to get a connection from the pool
+        const client = await pool.connect();
+        console.log('Database connected successfully');
+        console.log(client)
+        
+        // Always release the client back to the pool when done
+        client.release();
+    } catch (err) {
+        console.error('Database connection failed:', err.message);
+    } finally {
+        // End the pool (only needed if you are shutting down the script)
+        await pool.end(); 
     }
-    else{
-        console.log(err.message)
-    }
-    client.end()
-})
+}
+
+testConnection();
